@@ -1162,21 +1162,6 @@ Discarded input sections
  .debug_macro   0x00000000       0x10 ./Core/Src/sensor/DC_sensor.o
  .debug_macro   0x00000000       0x3c ./Core/Src/sensor/DC_sensor.o
  .debug_macro   0x00000000       0x20 ./Core/Src/sensor/DC_sensor.o
- .group         0x00000000        0xc ./Core/Src/sensor/DC_sensor2.o
- .text          0x00000000        0x0 ./Core/Src/sensor/DC_sensor2.o
- .data          0x00000000        0x0 ./Core/Src/sensor/DC_sensor2.o
- .bss           0x00000000        0x0 ./Core/Src/sensor/DC_sensor2.o
- .debug_info    0x00000000       0x22 ./Core/Src/sensor/DC_sensor2.o
- .debug_abbrev  0x00000000       0x12 ./Core/Src/sensor/DC_sensor2.o
- .debug_aranges
-                0x00000000       0x18 ./Core/Src/sensor/DC_sensor2.o
- .debug_macro   0x00000000       0x11 ./Core/Src/sensor/DC_sensor2.o
- .debug_macro   0x00000000      0xacc ./Core/Src/sensor/DC_sensor2.o
- .debug_line    0x00000000       0x40 ./Core/Src/sensor/DC_sensor2.o
- .debug_str     0x00000000     0x2e3e ./Core/Src/sensor/DC_sensor2.o
- .comment       0x00000000       0x44 ./Core/Src/sensor/DC_sensor2.o
- .ARM.attributes
-                0x00000000       0x2d ./Core/Src/sensor/DC_sensor2.o
  .text          0x00000000       0x14 ./Core/Startup/startup_stm32f103c6tx.o
  .data          0x00000000        0x0 ./Core/Startup/startup_stm32f103c6tx.o
  .bss           0x00000000        0x0 ./Core/Startup/startup_stm32f103c6tx.o
@@ -2841,7 +2826,6 @@ LOAD ./Core/Src/sysmem.o
 LOAD ./Core/Src/system_stm32f1xx.o
 LOAD ./Core/Src/sensor/AC_sensor.o
 LOAD ./Core/Src/sensor/DC_sensor.o
-LOAD ./Core/Src/sensor/DC_sensor2.o
 LOAD ./Core/Startup/startup_stm32f103c6tx.o
 LOAD ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.o
 LOAD ./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_cortex.o

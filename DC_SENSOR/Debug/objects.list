@@ -10,7 +10,6 @@
 "./Core/Src/system_stm32f1xx.o"
 "./Core/Src/sensor/AC_sensor.o"
 "./Core/Src/sensor/DC_sensor.o"
-"./Core/Src/sensor/DC_sensor2.o"
 "./Core/Startup/startup_stm32f103c6tx.o"
 "./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.o"
 "./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_cortex.o"

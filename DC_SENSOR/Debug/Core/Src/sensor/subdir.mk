@@ -6,18 +6,15 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../Core/Src/sensor/AC_sensor.c \
-../Core/Src/sensor/DC_sensor.c \
-../Core/Src/sensor/DC_sensor2.c 
+../Core/Src/sensor/DC_sensor.c 
 
 OBJS += \
 ./Core/Src/sensor/AC_sensor.o \
-./Core/Src/sensor/DC_sensor.o \
-./Core/Src/sensor/DC_sensor2.o 
+./Core/Src/sensor/DC_sensor.o 
 
 C_DEPS += \
 ./Core/Src/sensor/AC_sensor.d \
-./Core/Src/sensor/DC_sensor.d \
-./Core/Src/sensor/DC_sensor2.d 
+./Core/Src/sensor/DC_sensor.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
@@ -27,7 +24,7 @@ Core/Src/sensor/%.o Core/Src/sensor/%.su Core/Src/sensor/%.cyclo: ../Core/Src/se
 clean: clean-Core-2f-Src-2f-sensor
 
 clean-Core-2f-Src-2f-sensor:
-	-$(RM) ./Core/Src/sensor/AC_sensor.cyclo ./Core/Src/sensor/AC_sensor.d ./Core/Src/sensor/AC_sensor.o ./Core/Src/sensor/AC_sensor.su ./Core/Src/sensor/DC_sensor.cyclo ./Core/Src/sensor/DC_sensor.d ./Core/Src/sensor/DC_sensor.o ./Core/Src/sensor/DC_sensor.su ./Core/Src/sensor/DC_sensor2.cyclo ./Core/Src/sensor/DC_sensor2.d ./Core/Src/sensor/DC_sensor2.o ./Core/Src/sensor/DC_sensor2.su
+	-$(RM) ./Core/Src/sensor/AC_sensor.cyclo ./Core/Src/sensor/AC_sensor.d ./Core/Src/sensor/AC_sensor.o ./Core/Src/sensor/AC_sensor.su ./Core/Src/sensor/DC_sensor.cyclo ./Core/Src/sensor/DC_sensor.d ./Core/Src/sensor/DC_sensor.o ./Core/Src/sensor/DC_sensor.su
 
 .PHONY: clean-Core-2f-Src-2f-sensor
 
