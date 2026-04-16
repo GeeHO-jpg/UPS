@@ -1,0 +1,2 @@
+../Core/Src/Packet_RCSA/Commands.c:10:6:IsValidUDPCommand	1
+../Core/Src/Packet_RCSA/Commands.c:14:6:IsValidTCPCommand	1

@@ -1,0 +1,14 @@
+../Core/Src/apply/ring_buffer.c:13:17:rb_enter_critical	1
+../Core/Src/apply/ring_buffer.c:20:13:rb_exit_critical	1
+../Core/Src/apply/ring_buffer.c:25:17:next_index	1
+../Core/Src/apply/ring_buffer.c:30:5:rb_init	4
+../Core/Src/apply/ring_buffer.c:51:6:rb_free	3
+../Core/Src/apply/ring_buffer.c:69:10:rb_used	5
+../Core/Src/apply/ring_buffer.c:93:10:rb_available	4
+../Core/Src/apply/ring_buffer.c:102:6:rb_put_byte	5
+../Core/Src/apply/ring_buffer.c:125:10:rb_put	7
+../Core/Src/apply/ring_buffer.c:144:6:rb_put_exact	8
+../Core/Src/apply/ring_buffer.c:173:10:rb_get	7
+../Core/Src/apply/ring_buffer.c:193:10:rb_get_count	1
+../Core/Src/apply/ring_buffer.c:198:6:rb_flush	3
+../Core/Src/apply/ring_buffer.c:210:9:rb_peek_at	4

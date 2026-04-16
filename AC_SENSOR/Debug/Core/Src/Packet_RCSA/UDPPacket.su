@@ -1,0 +1,7 @@
+../Core/Src/Packet_RCSA/UDPPacket.c:12:12:CreateUDPPacket	24	static
+../Core/Src/Packet_RCSA/UDPPacket.c:38:6:FreeUDPPacket	16	static
+../Core/Src/Packet_RCSA/UDPPacket.c:57:6:IsOperableUDPPacket	16	static
+../Core/Src/Packet_RCSA/UDPPacket.c:62:6:IsPayloadCompletedUDPPacket	16	static
+../Core/Src/Packet_RCSA/UDPPacket.c:67:6:AppendBytePayloadUDPPacket	16	static
+../Core/Src/Packet_RCSA/UDPPacket.c:78:6:AttachCompletedPayload	24	static
+../Core/Src/Packet_RCSA/UDPPacket.c:93:6:SendUdpWithPayloadWifi_buff	32	static

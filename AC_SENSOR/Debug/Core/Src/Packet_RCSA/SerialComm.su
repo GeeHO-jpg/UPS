@@ -1,0 +1,12 @@
+../Core/Src/Packet_RCSA/SerialComm.c:26:6:IsOperableSerialComm	16	static
+../Core/Src/Packet_RCSA/SerialComm.c:31:13:CreateSerialComm	24	static
+../Core/Src/Packet_RCSA/SerialComm.c:54:6:FreeReceiveBufferSerialComm	16	static
+../Core/Src/Packet_RCSA/SerialComm.c:60:6:FreeIncompletePacketSerialComm	16	static
+../Core/Src/Packet_RCSA/SerialComm.c:66:6:FreeCompletePacketSerialComm	16	static
+../Core/Src/Packet_RCSA/SerialComm.c:72:6:FreeSerialComm	16	static
+../Core/Src/Packet_RCSA/SerialComm.c:84:6:RunReceiveSerialComm	40	static
+../Core/Src/Packet_RCSA/SerialComm.c:136:6:ProcessBufferSerialComm	32	static
+../Core/Src/Packet_RCSA/SerialComm.c:177:6:FinalizeIncompletePacketSerialComm	24	static
+../Core/Src/Packet_RCSA/SerialComm.c:201:12:GetCompletePacketSerialComm	24	static
+../Core/Src/Packet_RCSA/SerialComm.c:230:6:SendBytesSerialComm	32	static
+../Core/Src/Packet_RCSA/SerialComm.c:252:6:SendUDPPacketSerialComm	32	static

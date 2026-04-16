@@ -1,0 +1,4 @@
+../Core/Src/Packet_RCSA/crc_32.c:67:6:rcsa_crc32_init	16	static
+../Core/Src/Packet_RCSA/crc_32.c:72:6:rcsa_crc32_reset	16	static
+../Core/Src/Packet_RCSA/crc_32.c:77:6:rcsa_crc32_update	32	static
+../Core/Src/Packet_RCSA/crc_32.c:91:10:rcsa_crc32_get	16	static

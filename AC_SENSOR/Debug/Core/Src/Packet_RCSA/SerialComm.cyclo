@@ -1,0 +1,12 @@
+../Core/Src/Packet_RCSA/SerialComm.c:26:6:IsOperableSerialComm	3
+../Core/Src/Packet_RCSA/SerialComm.c:31:13:CreateSerialComm	3
+../Core/Src/Packet_RCSA/SerialComm.c:54:6:FreeReceiveBufferSerialComm	1
+../Core/Src/Packet_RCSA/SerialComm.c:60:6:FreeIncompletePacketSerialComm	1
+../Core/Src/Packet_RCSA/SerialComm.c:66:6:FreeCompletePacketSerialComm	1
+../Core/Src/Packet_RCSA/SerialComm.c:72:6:FreeSerialComm	2
+../Core/Src/Packet_RCSA/SerialComm.c:84:6:RunReceiveSerialComm	12
+../Core/Src/Packet_RCSA/SerialComm.c:136:6:ProcessBufferSerialComm	9
+../Core/Src/Packet_RCSA/SerialComm.c:177:6:FinalizeIncompletePacketSerialComm	4
+../Core/Src/Packet_RCSA/SerialComm.c:201:12:GetCompletePacketSerialComm	4
+../Core/Src/Packet_RCSA/SerialComm.c:230:6:SendBytesSerialComm	6
+../Core/Src/Packet_RCSA/SerialComm.c:252:6:SendUDPPacketSerialComm	6

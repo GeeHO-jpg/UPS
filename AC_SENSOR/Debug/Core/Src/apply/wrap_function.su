@@ -1,0 +1,16 @@
+../Core/Src/apply/wrap_function.c:36:17:MasterI2CRead	16	static
+../Core/Src/apply/wrap_function.c:46:6:I2CMasterWriteByte	16	static
+../Core/Src/apply/wrap_function.c:51:6:I2CMasterReadByte	16	static
+../Core/Src/apply/wrap_function.c:57:17:SlaveI2CRead	16	static
+../Core/Src/apply/wrap_function.c:67:6:I2CSlaveWriteByte	16	static
+../Core/Src/apply/wrap_function.c:72:6:I2CSlaveReadByte	16	static
+../Core/Src/apply/wrap_function.c:81:10:rb_peek_bytes	48	static,ignoring_inline_asm
+../Core/Src/apply/wrap_function.c:107:13:rb_discard_bytes	40	static
+../Core/Src/apply/wrap_function.c:125:6:i2c_extract_one_packet	40	static
+../Core/Src/apply/wrap_function.c:184:10:i2c_peek_one_packet	32	static
+../Core/Src/apply/wrap_function.c:224:13:IsInitializeI2CComm	8	static
+../Core/Src/apply/wrap_function.c:229:6:InitializeI2CComm	16	static
+../Core/Src/apply/wrap_function.c:238:6:RunReceiveI2CComm	8	static
+../Core/Src/apply/wrap_function.c:243:12:GetReceivedUDPPacketI2CComm	8	static
+../Core/Src/apply/wrap_function.c:249:13:QueueBytesToI2CTx	16	static
+../Core/Src/apply/wrap_function.c:260:6:SendUDPPacketI2CComm	16	static

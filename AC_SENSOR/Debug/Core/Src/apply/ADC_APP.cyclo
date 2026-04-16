@@ -1,0 +1,3 @@
+../Core/Src/apply/ADC_APP.c:21:13:comm_init	1
+../Core/Src/apply/ADC_APP.c:27:6:app_init	1
+../Core/Src/apply/ADC_APP.c:33:6:app_run	2

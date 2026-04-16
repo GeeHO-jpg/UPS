@@ -1,0 +1,4 @@
+../Core/Src/comm/adc_comm.c:23:9:ADC_ID_Register	16	static
+../Core/Src/comm/adc_comm.c:33:9:ADC_Comm_Start	16	static
+../Core/Src/comm/adc_comm.c:42:9:ADC_Comm_GetLatest	16	static
+../Core/Src/comm/adc_comm.c:54:6:HAL_ADC_ConvCpltCallback	24	static

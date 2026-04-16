@@ -1,0 +1,4 @@
+../Core/Src/Packet_RCSA/crc_32.c:67:6:rcsa_crc32_init	1
+../Core/Src/Packet_RCSA/crc_32.c:72:6:rcsa_crc32_reset	1
+../Core/Src/Packet_RCSA/crc_32.c:77:6:rcsa_crc32_update	4
+../Core/Src/Packet_RCSA/crc_32.c:91:10:rcsa_crc32_get	1
