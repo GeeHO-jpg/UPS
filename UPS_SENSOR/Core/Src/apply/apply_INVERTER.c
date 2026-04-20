@@ -1,41 +1,28 @@
 /*
- * apply_INVERTER.c
- *
- *  Created on: Apr 17, 2026
- *      Author: _TTTXN
+ * apply.c
  */
-
-
 #include "apply_INVERTER.h"
-
-#include <stdint.h>
-#include <main.h>
-
-
 #include "../comm/uart_comm.h"
-
-InverterQData_t inv_data;
-
+#include <string.h>
+#include "../sensor/NTS250_INVERTER.h"
+#include "main.h"
 
 extern UART_HandleTypeDef huart2;
 
-static uint32_t last_tick = 0U;
+InverterQData_t inv;
 
-uint8_t NTS250_APP_init()
+uint8_t NTS250_APP_init(void)
 {
     if(!UART_ID_Register(UART_COMM_2, &huart2))
     {
-        return 0;
+    	return 0U;
     }
     NTS250_init(UART_COMM_2);
-    return 1;
+    return 1U;
 }
-
-
 
 uint8_t NTS250_APP_run(InverterQData_t *out)
 {
-    uint32_t now = HAL_GetTick();
 
     if (out == NULL)
     {
@@ -44,19 +31,14 @@ uint8_t NTS250_APP_run(InverterQData_t *out)
 
     NTS250_Task();
 
-    if ((now - last_tick) >= 800U)
+    if (NTS250_GetLatest(&inv))
     {
-        last_tick = now;
-        (void)NTS250_Q_CMD_Request();
-    }
-
-    if (NTS250_GetQData(out) != 0U)
-    {
+        *out = inv;
         return 1U;
     }
-
-    return 0U;
+    else
+    {
+        memset(out, 0, sizeof(*out));
+        return 0U;
+    }
 }
-
-
-

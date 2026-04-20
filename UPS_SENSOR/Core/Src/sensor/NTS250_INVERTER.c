@@ -1,383 +1,397 @@
 /*
- * NTP250_INVERTER.c
- *
- *  Created on: Apr 16, 2026
- *      Author: _TTTXN
+ * NTS250_INVERTER.c
  */
-
 #include "NTS250_INVERTER.h"
 #include "../comm/uart_comm.h"
 #include <string.h>
+//#include <stdlib.h>
 
 
-#define DC_REQ_LEN   2U
-#define DC_RESP_LEN  64U
+#define NTS250_CMD_PERIOD_MS   800U
+#define NTS250_RX_TIMEOUT_MS   200U
+#define NTS250_FRAME_MAX_LEN   64U
 
+#define NTS250_STATE_IDLE      0U
+#define NTS250_STATE_WAIT_TX   1U
+#define NTS250_STATE_WAIT_RX   2U
 
-static Uart_Comm_id_t NTS250_id = UART_COMM_MAX;
-static uint8_t NTS250_state = 0U;   /* 0=idle, 1=wait_tx, 2=wait_rx */
-static uint8_t NTS250_ready = 0U;
+static const uint8_t NTS250_Q_CMD[2] = { 'Q', '\r' };
 
-static uint8_t tx_buf[DC_REQ_LEN];
-static uint8_t rx_buf[DC_RESP_LEN];
-
-static uint8_t  rx_byte = 0U;       // รับทีละ 1 byte
-static uint16_t rx_len  = 0U;       // ความยาวที่รับสะสมแล้ว
-
-static InverterQData_t q_data;
-static uint8_t q_data_valid = 0U;
-
-
-static uint8_t IsDigitAscii(uint8_t c)
+typedef struct
 {
-    return (uint8_t)((c >= '0') && (c <= '9'));
+    Uart_Comm_id_t id;
+    uint8_t state;
+    uint8_t valid;
+    uint8_t rx_byte;
+    uint16_t rx_len;
+    uint32_t last_req_tick;
+    uint32_t last_rx_tick;
+    uint8_t rx_buf[NTS250_FRAME_MAX_LEN];
+    char clean_buf[NTS250_FRAME_MAX_LEN];
+    InverterQData_t data;
+} NTS250_Context_t;
+
+static NTS250_Context_t nts;
+
+
+static uint16_t NTS250_ParseU16(const char *s)
+{
+    uint16_t v = 0U;
+
+    if (s == NULL)
+    {
+        return 0U;
+    }
+
+    while ((*s >= '0') && (*s <= '9'))
+    {
+        v = (uint16_t)((v * 10U) + (uint16_t)(*s - '0'));
+        s++;
+    }
+
+    return v;
 }
 
-static uint8_t ParseU16_3(const uint8_t *s, uint16_t *out)
+static uint8_t NTS250_ParseU8(const char *s)
 {
-    if ((s == NULL) || (out == NULL))
+    return (uint8_t)NTS250_ParseU16(s);
+}
+
+static int16_t NTS250_ParseS16_X10(const char *s)
+{
+    int16_t sign = 1;
+    int16_t value = 0;
+    uint8_t frac_done = 0U;
+
+    if (s == NULL)
+    {
+        return 0;
+    }
+
+    if (*s == '-')
+    {
+        sign = -1;
+        s++;
+    }
+
+    while (*s != '\0')
+    {
+        if ((*s >= '0') && (*s <= '9'))
+        {
+            value = (int16_t)(value * 10 + (int16_t)(*s - '0'));
+            if (frac_done != 0U)
+            {
+                break;
+            }
+        }
+        else if (*s == '.')
+        {
+            frac_done = 1U;
+        }
+        else
+        {
+            break;
+        }
+        s++;
+    }
+
+    if (frac_done == 0U)
+    {
+        value = (int16_t)(value * 10);
+    }
+
+    return (int16_t)(value * sign);
+}
+
+static uint16_t NTS250_ParseU16_X10(const char *s)
+{
+    int16_t v = NTS250_ParseS16_X10(s);
+
+    if (v < 0)
     {
         return 0U;
     }
 
-    if ((!IsDigitAscii(s[0])) || (!IsDigitAscii(s[1])) || (!IsDigitAscii(s[2])))
+    return (uint16_t)v;
+}
+
+static void NTS250_ClearData(void)
+{
+    memset(&nts.data, 0, sizeof(nts.data));
+    nts.valid = 0U;
+}
+
+static void NTS250_ResetRx(void)
+{
+    nts.rx_len = 0U;
+    memset(nts.rx_buf, 0, sizeof(nts.rx_buf));
+    memset(nts.clean_buf, 0, sizeof(nts.clean_buf));
+}
+
+static void NTS250_ResetComm(void)
+{
+    (void)UART_Comm_Abort(nts.id);
+    UART_Comm_ClearFlags(nts.id);
+    nts.state = NTS250_STATE_IDLE;
+    NTS250_ResetRx();
+}
+
+static uint8_t NTS250_StripFrame(const uint8_t *raw, uint16_t raw_len, char *out, uint16_t out_size)
+{
+    uint16_t end;
+    uint16_t copy_len;
+
+    if ((raw == NULL) || (out == NULL) || (raw_len < 4U) || (out_size < 2U))
     {
         return 0U;
     }
 
-    *out = (uint16_t)((uint16_t)(s[0] - '0') * 100U) +
-           (uint16_t)((uint16_t)(s[1] - '0') * 10U) +
-           (uint16_t)(s[2] - '0');
+    if (raw[0] != '(')
+    {
+        return 0U;
+    }
+
+    end = raw_len;
+    while ((end > 0U) && ((raw[end - 1U] == '\r') || (raw[end - 1U] == '\n')))
+    {
+        end--;
+    }
+
+    if ((end == 0U) || (raw[end - 1U] != ')') || (end <= 2U))
+    {
+        return 0U;
+    }
+
+    copy_len = (uint16_t)(end - 2U);
+    if ((copy_len + 1U) > out_size)
+    {
+        return 0U;
+    }
+
+    memcpy(out, &raw[1], copy_len);
+    out[copy_len] = '\0';
     return 1U;
 }
 
-static uint8_t ParseU8_3(const uint8_t *s, uint8_t *out)
+static uint8_t NTS250_ParseStatusBits(const char *bits, QStatusBits_t *st)
 {
-    uint16_t temp = 0U;
-
-    if ((s == NULL) || (out == NULL))
-    {
-        return 0U;
-    }
-
-    if (ParseU16_3(s, &temp) == 0U)
-    {
-        return 0U;
-    }
-
-    if (temp > 255U)
-    {
-        return 0U;
-    }
-
-    *out = (uint8_t)temp;
-    return 1U;
-}
-
-static uint8_t ParseFloatX10_4(const uint8_t *s, float *out)
-{
-    uint16_t x10 = 0U;
-
-    if ((s == NULL) || (out == NULL))
-    {
-        return 0U;
-    }
-
-    if ((!IsDigitAscii(s[0])) || (!IsDigitAscii(s[1])) || (s[2] != '.') || (!IsDigitAscii(s[3])))
-    {
-        return 0U;
-    }
-
-    x10 = (uint16_t)((uint16_t)(s[0] - '0') * 100U) +
-          (uint16_t)((uint16_t)(s[1] - '0') * 10U) +
-          (uint16_t)(s[3] - '0');
-
-    *out = ((float)x10) / 10.0f;
-    return 1U;
-}
-
-static void Create_Q_CMD(uint8_t *out)
-{
- out[0] = 0x51;
- out[1] = 0x0D;
-}
-
-
-
-
-
-uint8_t NTS250_Parse_Q_CMD(const uint8_t *raw, uint16_t len, InverterQData_t *out)
-{
-    uint16_t temp_u16 = 0U;
     uint8_t i;
 
-    if ((raw == NULL) || (out == NULL))
+    if ((bits == NULL) || (st == NULL) || (strlen(bits) != 19U))
     {
         return 0U;
     }
 
-    /* รองรับกรณีลงท้าย CRLF */
-    if ((len > 0U) && (raw[len - 1U] == 0x0AU))
+    for (i = 0U; i < 19U; i++)
     {
-        len--;
+        if ((bits[i] != '0') && (bits[i] != '1'))
+        {
+            return 0U;
+        }
     }
 
-    /* เฟรม Q ปกติ:
-       (VVV QQQ SS.S BBB TT.T MMM RR.R DDD PPP b0...b18)\r
-       index:
-       0     = '('
-       1..3  = VVV
-       4     = ' '
-       5..7  = QQQ
-       8     = ' '
-       9..12 = SS.S
-       13    = ' '
-       14..16= BBB
-       17    = ' '
-       18..21= TT.T
-       22    = ' '
-       23..25= MMM
-       26    = ' '
-       27..30= RR.R
-       31    = ' '
-       32..34= DDD
-       35    = ' '
-       36..38= PPP
-       39    = ' '
-       40..58= b0..b18
-       59    = ')'
-       60    = '\r'
-    */
-    if (len != 61U)
-    {
-        return 0U;
-    }
 
-    if ((raw[0] != '(') || (raw[59] != ')') || (raw[60] != 0x0DU))
-    {
-        return 0U;
-    }
+    st->inverter_mode          = (uint8_t)(bits[0]  - '0');
+    st->bypass_mode            = (uint8_t)(bits[1]  - '0');
+    st->utility_present        = (uint8_t)(bits[2]  - '0');
+    st->utility_charger_enable = (uint8_t)(bits[3]  - '0');
+    st->solar_charger_enable   = (uint8_t)(bits[4]  - '0');
+    st->saving_mode            = (uint8_t)(bits[5]  - '0');
+    st->battery_exhausted      = (uint8_t)(bits[6]  - '0');
+    st->shutdown_mode          = (uint8_t)(bits[7]  - '0');
+    st->battery_ovp            = (uint8_t)(bits[8]  - '0');
+    st->remote_shutdown        = (uint8_t)(bits[9]  - '0');
+    st->olp_100_115            = (uint8_t)(bits[10] - '0');
+    st->olp_115_150            = (uint8_t)(bits[11] - '0');
+    st->olp_over_150           = (uint8_t)(bits[12] - '0');
+    st->otp                    = (uint8_t)(bits[13] - '0');
+    st->inv_uvp                = (uint8_t)(bits[14] - '0');
+    st->inv_ovp                = (uint8_t)(bits[15] - '0');
+    st->inv_fault              = (uint8_t)(bits[16] - '0');
+    st->eeprom_error           = (uint8_t)(bits[17] - '0');
+    st->system_shutdown        = (uint8_t)(bits[18] - '0');
+    return 1U;
+}
 
-    if ((raw[4]  != ' ') || (raw[8]  != ' ') || (raw[13] != ' ') ||
-        (raw[17] != ' ') || (raw[22] != ' ') || (raw[26] != ' ') ||
-        (raw[31] != ' ') || (raw[35] != ' ') || (raw[39] != ' '))
+static uint8_t NTS250_ParsePayload(char *clean, InverterQData_t *out)
+{
+    char *token;
+    char *tokens[10];
+    uint8_t count = 0U;
+
+    if ((clean == NULL) || (out == NULL))
     {
         return 0U;
     }
 
     memset(out, 0, sizeof(*out));
 
-    if (ParseU16_3(&raw[1], &out->output_voltage_ac) == 0U)
+    token = strtok(clean, " ");
+    while ((token != NULL) && (count < 10U))
+    {
+        tokens[count++] = token;
+        token = strtok(NULL, " ");
+    }
+
+    if (count != 10U)
     {
         return 0U;
     }
 
-    if (ParseU8_3(&raw[5], &out->load_percent_digital) == 0U)
-    {
-        return 0U;
-    }
 
-    if (ParseFloatX10_4(&raw[9], &out->battery_voltage) == 0U)
-    {
-        return 0U;
-    }
 
-    if (ParseU8_3(&raw[14], &out->battery_percent) == 0U)
-    {
-        return 0U;
-    }
 
-    if (ParseFloatX10_4(&raw[18], &out->heatsink_temp) == 0U)
-    {
-        return 0U;
-    }
+    out->output_voltage_ac    = NTS250_ParseU16(tokens[0]);
+    out->load_percent_digital = NTS250_ParseU8(tokens[1]);
+    out->battery_voltage_x10  = NTS250_ParseU16_X10(tokens[2]);
+    out->battery_percent      = NTS250_ParseU8(tokens[3]);
+    out->heatsink_temp_x10    = NTS250_ParseS16_X10(tokens[4]);
+    out->utility_voltage      = NTS250_ParseU16(tokens[5]);
+    out->output_frequency_x10 = NTS250_ParseU16_X10(tokens[6]);
+    out->dc_bus_voltage       = NTS250_ParseU16(tokens[7]);
+    out->load_percent_analog  = NTS250_ParseU8(tokens[8]);
 
-    if (ParseU16_3(&raw[23], &out->utility_voltage) == 0U)
-    {
-        return 0U;
-    }
-
-    if (ParseFloatX10_4(&raw[27], &out->output_frequency) == 0U)
-    {
-        return 0U;
-    }
-
-    if (ParseU16_3(&raw[32], &out->dc_bus_voltage) == 0U)
-    {
-        return 0U;
-    }
-
-    if (ParseU8_3(&raw[36], &out->load_percent_analog) == 0U)
-    {
-        return 0U;
-    }
-
-    /* bits 19 ตัว: raw[40]..raw[58] */
-    for (i = 40U; i <= 58U; i++)
-    {
-        if ((raw[i] != '0') && (raw[i] != '1'))
-        {
-            return 0U;
-        }
-    }
-
-    out->status.inverter_mode          = (uint8_t)(raw[40] - '0');
-    out->status.bypass_mode            = (uint8_t)(raw[41] - '0');
-    out->status.utility_present        = (uint8_t)(raw[42] - '0');
-    out->status.utility_charger_enable = (uint8_t)(raw[43] - '0');
-    out->status.solar_charger_enable   = (uint8_t)(raw[44] - '0');
-    out->status.saving_mode            = (uint8_t)(raw[45] - '0');
-    out->status.battery_exhausted      = (uint8_t)(raw[46] - '0');
-    out->status.shutdown_mode          = (uint8_t)(raw[47] - '0');
-    out->status.battery_ovp            = (uint8_t)(raw[48] - '0');
-    out->status.remote_shutdown        = (uint8_t)(raw[49] - '0');
-    out->status.olp_100_115            = (uint8_t)(raw[50] - '0');
-    out->status.olp_115_150            = (uint8_t)(raw[51] - '0');
-    out->status.olp_over_150           = (uint8_t)(raw[52] - '0');
-    out->status.otp                    = (uint8_t)(raw[53] - '0');
-    out->status.inv_uvp                = (uint8_t)(raw[54] - '0');
-    out->status.inv_ovp                = (uint8_t)(raw[55] - '0');
-    out->status.inv_fault              = (uint8_t)(raw[56] - '0');
-    out->status.eeprom_error           = (uint8_t)(raw[57] - '0');
-    out->status.system_shutdown        = (uint8_t)(raw[58] - '0');
-
-    (void)temp_u16;
-    return 1U;
+    return NTS250_ParseStatusBits(tokens[9], &out->status);
 }
 
-uint8_t NTS250_Q_CMD_Request(void)
+static uint8_t NTS250_StartRequest(void)
 {
-    if (NTS250_id >= UART_COMM_MAX)
+    if ((nts.id >= UART_COMM_MAX) || (nts.state != NTS250_STATE_IDLE) || (UART_Comm_IsBusy(nts.id) != 0U))
     {
         return 0U;
     }
 
-    if (NTS250_state != 0U)
+    UART_Comm_ClearFlags(nts.id);
+    NTS250_ResetRx();
+
+    if (UART_Comm_Transmit_IT(nts.id, NTS250_Q_CMD, sizeof(NTS250_Q_CMD)) == 0U)
     {
         return 0U;
     }
 
-    if (UART_Comm_IsBusy(NTS250_id) != 0U)
-    {
-        return 0U;
-    }
-
-    Create_Q_CMD(tx_buf);
-    UART_Comm_ClearFlags(NTS250_id);
-    NTS250_ready = 0U;
-
-    if (UART_Comm_Transmit_IT(NTS250_id, tx_buf, DC_REQ_LEN) == 0U)
-    {
-        return 0U;
-    }
-
-    NTS250_state = 1U;
+    nts.state = NTS250_STATE_WAIT_TX;
+    nts.last_req_tick = HAL_GetTick();
     return 1U;
 }
-
 
 void NTS250_init(Uart_Comm_id_t uart_id)
 {
-    NTS250_id = uart_id;
-    NTS250_state = 0U;
-    NTS250_ready = 0U;
-
-    memset(tx_buf, 0, sizeof(tx_buf));
-    memset(rx_buf, 0, sizeof(rx_buf));
-    NTS250_Q_CMD_Request();
+    memset(&nts, 0, sizeof(nts));
+    nts.id = uart_id;
+    nts.state = NTS250_STATE_IDLE;
+    NTS250_ClearData();
 }
 
 void NTS250_Task(void)
 {
-    if (NTS250_id >= UART_COMM_MAX)
+    uint32_t now;
+
+    if (nts.id >= UART_COMM_MAX)
     {
         return;
     }
 
-    if (UART_Comm_HasError(NTS250_id) != 0U)
+    now = HAL_GetTick();
+
+    if (UART_Comm_HasError(nts.id) != 0U)
     {
-        UART_Comm_ClearFlags(NTS250_id);
-        NTS250_state = 0U;
-        rx_len = 0U;
+        NTS250_ResetComm();
+        NTS250_ClearData();
+    }
+
+    if ((nts.state == NTS250_STATE_IDLE) && ((now - nts.last_req_tick) >= NTS250_CMD_PERIOD_MS))
+    {
+        (void)NTS250_StartRequest();
         return;
     }
 
-    if (NTS250_state == 1U)
+    if ((nts.state == NTS250_STATE_WAIT_TX) && (UART_Comm_IsTxDone(nts.id) != 0U))
     {
-        if (UART_Comm_IsTxDone(NTS250_id) != 0U)
+        UART_Comm_ClearFlags(nts.id);
+
+        if (UART_Comm_Receive_IT(nts.id, &nts.rx_byte, 1U) != 0U)
         {
-            UART_Comm_ClearFlags(NTS250_id);
-
-            rx_len = 0U;
-            memset(rx_buf, 0, sizeof(rx_buf));
-
-            if (UART_Comm_Receive_IT(NTS250_id, &rx_byte, 1U) != 0U)
-            {
-                NTS250_state = 2U;
-            }
-            else
-            {
-                NTS250_state = 0U;
-            }
+            nts.state = NTS250_STATE_WAIT_RX;
+            nts.last_rx_tick = now;
         }
+        else
+        {
+            NTS250_ResetComm();
+            NTS250_ClearData();
+        }
+        return;
     }
-    else if (NTS250_state == 2U)
+
+    if (nts.state != NTS250_STATE_WAIT_RX)
     {
-        if (UART_Comm_IsRxDone(NTS250_id) != 0U)
-        {
-            UART_Comm_ClearFlags(NTS250_id);
-
-            if (rx_len < sizeof(rx_buf))
-            {
-                rx_buf[rx_len++] = rx_byte;
-            }
-            else
-            {
-                // buffer overflow
-                NTS250_state = 0U;
-                rx_len = 0U;
-                return;
-            }
-
-            // เจอ CR = จบเฟรม
-            if (rx_byte == 0x0DU)
-            {
-                NTS250_state = 0U;
-
-                if (NTS250_Parse_Q_CMD(rx_buf, rx_len, &q_data) != 0U)
-                {
-                    q_data_valid = 1U;
-                    NTS250_ready = 1U;
-                }
-                else
-                {
-                    q_data_valid = 0U;
-                    NTS250_ready = 0U;
-                }
-            }
-            else
-            {
-                // รับต่ออีก 1 ไบต์
-                if (UART_Comm_Receive_IT(NTS250_id, &rx_byte, 1U) == 0U)
-                {
-                    NTS250_state = 0U;
-                    rx_len = 0U;
-                }
-            }
-        }
+        return;
     }
+
+    if ((now - nts.last_rx_tick) > NTS250_RX_TIMEOUT_MS)
+    {
+        NTS250_ResetComm();
+        NTS250_ClearData();
+        return;
+    }
+
+    if (UART_Comm_IsRxDone(nts.id) == 0U)
+    {
+        return;
+    }
+
+    UART_Comm_ClearFlags(nts.id);
+    nts.last_rx_tick = now;
+
+    if (nts.rx_len >= (NTS250_FRAME_MAX_LEN - 1U))
+    {
+        NTS250_ResetComm();
+        NTS250_ClearData();
+        return;
+    }
+
+    nts.rx_buf[nts.rx_len++] = nts.rx_byte;
+
+    if (nts.rx_byte != '\r')
+    {
+        if (UART_Comm_Receive_IT(nts.id, &nts.rx_byte, 1U) == 0U)
+        {
+            NTS250_ResetComm();
+            NTS250_ClearData();
+        }
+        return;
+    }
+
+    nts.state = NTS250_STATE_IDLE;
+    nts.rx_buf[nts.rx_len] = '\0';
+
+    if (NTS250_StripFrame(nts.rx_buf, nts.rx_len, nts.clean_buf, sizeof(nts.clean_buf)) == 0U)
+    {
+        NTS250_ClearData();
+        return;
+    }
+
+    if (NTS250_ParsePayload(nts.clean_buf, &nts.data) == 0U)
+    {
+        NTS250_ClearData();
+        return;
+    }
+
+    nts.valid = 1U;
 }
 
-uint8_t NTS250_GetQData(InverterQData_t *out)
+uint8_t NTS250_GetLatest(InverterQData_t *out)
 {
-    if ((out == NULL) || (q_data_valid == 0U) || (NTS250_ready == 0U))
+    if (out == NULL)
     {
         return 0U;
     }
 
-    *out = q_data;
-    NTS250_ready = 0U;
+    if (nts.valid == 0U)
+    {
+        memset(out, 0, sizeof(*out));
+        return 0U;
+    }
+
+    *out = nts.data;
     return 1U;
 }
-
-

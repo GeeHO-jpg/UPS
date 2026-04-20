@@ -7,6 +7,7 @@
 
 #include "app_manage_packet.h"
 #include <stdint.h>
+#include <string.h>
 #include <main.h>
 #include "../Packet_RCSA/UDPPacket.h"
 #include "../Packet_RCSA/UDPPacketHeader.h"
@@ -171,7 +172,7 @@ static void app_pack_data_to_struct(void)
     if (NTS250_APP_run(&inv_out) != 0U)
     {
         // ได้ข้อมูล inverter ใหม่
-        UPSPacket.battery_Backup = (uint8_t)(inv_out.battery_voltage * 10);
+    	UPSPacket.battery_Backup = (uint8_t)inv_out.battery_voltage_x10;
         
     }
 

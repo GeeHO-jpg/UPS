@@ -13,4 +13,5 @@
 uint8_t NTS250_APP_init();
 uint8_t NTS250_APP_run(InverterQData_t *out);
 
+
 #endif /* SRC_APPLY_APPLY_INVERTER_H_ */
