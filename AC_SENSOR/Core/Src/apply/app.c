@@ -25,8 +25,8 @@ typedef struct{
 
     uint8_t  charging;              //1-0
     uint8_t chargepercent; 			//
-    uint16_t chargCurrentDC;        //(0-500)/10 A
-    uint16_t chargVoltageDC;        //(0-2000)/10 V
+    uint16_t chargCurrentDC;        //(0-5000)/100 A
+    uint16_t chargVoltageDC;        //(0-20000)/100 V
 
 }ups_data_t;
 
