@@ -34,11 +34,11 @@ typedef struct
 {
     uint16_t output_voltage_ac;
     uint8_t  load_percent_digital;
-    float    battery_voltage;
+    uint16_t battery_voltage_x10;     // เช่น 24.5V -> 245
     uint8_t  battery_percent;
-    float    heatsink_temp;
+    int16_t  heatsink_temp_x10;       // เช่น 32.1C -> 321
     uint16_t utility_voltage;
-    float    output_frequency;
+    uint16_t output_frequency_x10;    // เช่น 50.0Hz -> 500
     uint16_t dc_bus_voltage;
     uint8_t  load_percent_analog;
     QStatusBits_t status;

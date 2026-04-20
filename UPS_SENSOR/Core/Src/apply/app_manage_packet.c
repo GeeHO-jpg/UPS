@@ -174,6 +174,8 @@ static void app_pack_data_to_struct(void)
         // ได้ข้อมูล inverter ใหม่
     	UPSPacket.battery_Backup = (uint8_t)inv_out.battery_voltage_x10;
         
+    }else{
+    	UPSPacket.battery_Backup = 0;
     }
 
 }

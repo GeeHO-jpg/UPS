@@ -4,7 +4,8 @@
 #include "NTS250_INVERTER.h"
 #include "../comm/uart_comm.h"
 #include <string.h>
-#include <stdlib.h>
+//#include <stdlib.h>
+
 
 #define NTS250_CMD_PERIOD_MS   800U
 #define NTS250_RX_TIMEOUT_MS   200U
@@ -31,6 +32,88 @@ typedef struct
 } NTS250_Context_t;
 
 static NTS250_Context_t nts;
+
+
+static uint16_t NTS250_ParseU16(const char *s)
+{
+    uint16_t v = 0U;
+
+    if (s == NULL)
+    {
+        return 0U;
+    }
+
+    while ((*s >= '0') && (*s <= '9'))
+    {
+        v = (uint16_t)((v * 10U) + (uint16_t)(*s - '0'));
+        s++;
+    }
+
+    return v;
+}
+
+static uint8_t NTS250_ParseU8(const char *s)
+{
+    return (uint8_t)NTS250_ParseU16(s);
+}
+
+static int16_t NTS250_ParseS16_X10(const char *s)
+{
+    int16_t sign = 1;
+    int16_t value = 0;
+    uint8_t frac_done = 0U;
+
+    if (s == NULL)
+    {
+        return 0;
+    }
+
+    if (*s == '-')
+    {
+        sign = -1;
+        s++;
+    }
+
+    while (*s != '\0')
+    {
+        if ((*s >= '0') && (*s <= '9'))
+        {
+            value = (int16_t)(value * 10 + (int16_t)(*s - '0'));
+            if (frac_done != 0U)
+            {
+                break;
+            }
+        }
+        else if (*s == '.')
+        {
+            frac_done = 1U;
+        }
+        else
+        {
+            break;
+        }
+        s++;
+    }
+
+    if (frac_done == 0U)
+    {
+        value = (int16_t)(value * 10);
+    }
+
+    return (int16_t)(value * sign);
+}
+
+static uint16_t NTS250_ParseU16_X10(const char *s)
+{
+    int16_t v = NTS250_ParseS16_X10(s);
+
+    if (v < 0)
+    {
+        return 0U;
+    }
+
+    return (uint16_t)v;
+}
 
 static void NTS250_ClearData(void)
 {
@@ -107,6 +190,7 @@ static uint8_t NTS250_ParseStatusBits(const char *bits, QStatusBits_t *st)
         }
     }
 
+
     st->inverter_mode          = (uint8_t)(bits[0]  - '0');
     st->bypass_mode            = (uint8_t)(bits[1]  - '0');
     st->utility_present        = (uint8_t)(bits[2]  - '0');
@@ -154,15 +238,18 @@ static uint8_t NTS250_ParsePayload(char *clean, InverterQData_t *out)
         return 0U;
     }
 
-    out->output_voltage_ac    = (uint16_t)atoi(tokens[0]);
-    out->load_percent_digital = (uint8_t)atoi(tokens[1]);
-    out->battery_voltage      = (float)atof(tokens[2]);
-    out->battery_percent      = (uint8_t)atoi(tokens[3]);
-    out->heatsink_temp        = (float)atof(tokens[4]);
-    out->utility_voltage      = (uint16_t)atoi(tokens[5]);
-    out->output_frequency     = (float)atof(tokens[6]);
-    out->dc_bus_voltage       = (uint16_t)atoi(tokens[7]);
-    out->load_percent_analog  = (uint8_t)atoi(tokens[8]);
+
+
+
+    out->output_voltage_ac    = NTS250_ParseU16(tokens[0]);
+    out->load_percent_digital = NTS250_ParseU8(tokens[1]);
+    out->battery_voltage_x10  = NTS250_ParseU16_X10(tokens[2]);
+    out->battery_percent      = NTS250_ParseU8(tokens[3]);
+    out->heatsink_temp_x10    = NTS250_ParseS16_X10(tokens[4]);
+    out->utility_voltage      = NTS250_ParseU16(tokens[5]);
+    out->output_frequency_x10 = NTS250_ParseU16_X10(tokens[6]);
+    out->dc_bus_voltage       = NTS250_ParseU16(tokens[7]);
+    out->load_percent_analog  = NTS250_ParseU8(tokens[8]);
 
     return NTS250_ParseStatusBits(tokens[9], &out->status);
 }
