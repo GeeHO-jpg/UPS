@@ -23,7 +23,7 @@ ups_data_t UPSPacket;
 /*sensor variable*/
 DC_SensorRawValue_t DC_out;
 InverterQData_t inv_out;
-uint8_t AC_DATA;
+PZEMValues AC_DATA;
 
 uint8_t payLoad_CMD[64];
 uint8_t reply_payLoad_CMD[64];
@@ -120,47 +120,47 @@ static void make_plus_one_payload(const uint8_t *src, uint8_t *dst, uint16_t len
     }
 }
 
-static AppPacketType_t App_CheckPacket(const UDPPacket *pkt)
-{
-    if ((pkt == NULL) || (pkt->header == NULL))
-    {
-        return APP_PKT_INVALID;
-    }
-
-    if ((pkt->header->payload_size > 0U) && (pkt->payload == NULL))
-    {
-        return APP_PKT_INVALID;
-    }
-
-    switch (pkt->header->cmd)
-    {
-        case CMD_HANDSHAKE:
-        {
-            return APP_PKT_HANDSHAKE;
-        }
-
-        case CMD_STATION_POWER_UPS_SENSOR:
-        {
-            if ((pkt->header->payload_size >= 1U) && (pkt->payload[0] == 0x01U))
-            {
-                return APP_PKT_REQ_UPS_SENSOR;
-            }
-            return APP_PKT_INVALID;
-        }
-
-        default:
-        {
-            return APP_PKT_INVALID;
-        }
-    }
-}
+//static AppPacketType_t App_CheckPacket(const UDPPacket *pkt)
+//{
+//    if ((pkt == NULL) || (pkt->header == NULL))
+//    {
+//        return APP_PKT_INVALID;
+//    }
+//
+//    if ((pkt->header->payload_size > 0U) && (pkt->payload == NULL))
+//    {
+//        return APP_PKT_INVALID;
+//    }
+//
+//    switch (pkt->header->cmd)
+//    {
+//        case CMD_HANDSHAKE:
+//        {
+//            return APP_PKT_HANDSHAKE;
+//        }
+//
+//        case CMD_STATION_POWER_UPS_SENSOR:
+//        {
+//            if ((pkt->header->payload_size >= 1U) && (pkt->payload[0] == 0x01U))
+//            {
+//                return APP_PKT_REQ_UPS_SENSOR;
+//            }
+//            return APP_PKT_INVALID;
+//        }
+//
+//        default:
+//        {
+//            return APP_PKT_INVALID;
+//        }
+//    }
+//}
 
 static void app_pack_data_to_struct(void)
 {
-    if(AC_app_run(&AC_DATA) != 0U)
+    if(AC_app_Run(&AC_DATA) != 0U)
     {
         // ได้ข้อมูล AC ใหม่
-        UPSPacket.AC_Voltage = AC_DATA;
+    	UPSPacket.AC_Voltage = (uint8_t)(AC_DATA.voltage_x10 / 10U);
     }
     if (dc_app_run(&DC_out) != 0U)
     {
@@ -182,14 +182,14 @@ static void app_pack_data_to_struct(void)
 
 static uint8_t App_HandlePacket(const UDPPacket *pkt)
 {
-    AppPacketType_t type;
+
     uint16_t copy_len;
 
-    type = App_CheckPacket(pkt);
 
-    switch (type)
+
+    switch (pkt->header->cmd)
     {
-        case APP_PKT_HANDSHAKE:
+        case CMD_HANDSHAKE:
         {
             copy_len = pkt->header->payload_size;
             if (copy_len > sizeof(payLoad_CMD))
@@ -206,13 +206,16 @@ static uint8_t App_HandlePacket(const UDPPacket *pkt)
             return 1U;
         }
 
-        case APP_PKT_REQ_UPS_SENSOR:
+        case CMD_STATION_POWER_UPS_SENSOR:
         {
-            (void)App_Slave_SendUPSSensorPacket();
+        	if ((pkt->header->payload_size >= 1U) && (pkt->payload[0] == 0x01U)){
+        		(void)App_Slave_SendUPSSensorPacket();
+        	}
+
             return 1U;
         }
 
-        case APP_PKT_INVALID:
+        case CMD_COUNT:
         default:
         {
             return 0U;

@@ -9,9 +9,9 @@
 #define SRC_APPLY_APPLY_AC_SENSOR_H_
 
 #include <stdint.h>
-#include "../sensor/AC_sensor.h"
+#include "../sensor/PZEM004.h"
 
 uint8_t AC_app_init();
-uint8_t AC_app_run(uint8_t *out);
+uint8_t AC_app_Run(PZEMValues *out);
 
 #endif /* SRC_APPLY_APPLY_AC_SENSOR_H_ */

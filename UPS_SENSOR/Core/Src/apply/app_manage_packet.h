@@ -13,12 +13,12 @@
 
 #include "../Packet_RCSA/UDPPacket.h"
 
-typedef enum
-{
-    APP_PKT_INVALID = 0,
-    APP_PKT_HANDSHAKE,
-    APP_PKT_REQ_UPS_SENSOR
-} AppPacketType_t;
+//typedef enum
+//{
+//    APP_PKT_INVALID = 0,
+//    APP_PKT_HANDSHAKE,
+//    APP_PKT_REQ_UPS_SENSOR
+//} AppPacketType_t;
 
 typedef struct{
     uint8_t  gridPower;             //1-0
