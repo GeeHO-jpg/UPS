@@ -66,6 +66,20 @@ int8_t raw_temp_env = 0;
 //uint16_t raw_temp_env = 0;
 uint16_t raw_press_env = 0;
 
+
+/*
+ * ups
+ * */
+uint8_t grid_power =0;
+uint8_t  upsstationActive = 0;
+float  battery_Backup = 0.0f;        //(0-120)/10vdc
+uint8_t AC_Voltage = 0;				//(0-220)Vac
+uint8_t AC_Current = 0;
+uint16_t raw_CurrentDC = 0;
+uint16_t raw_VoltageDC = 0;
+float chargCurrentDC = 0;        //(0-5000)/100 A
+float chargVoltageDC = 0;        //(0-20000)/100 V
+/*--------------------------------------------*/
 slave_id_t slave_sq = SLAVE_WIND_SENSOR;
 
 static void extract_payload_data(uint16_t len, const uint8_t *data_fromPacket, uint8_t *data_out, uint16_t data_out_size)
@@ -157,6 +171,20 @@ static void check_pack(UDPPacket *pkt)
         case CMD_STATION_POWER_UPS_SENSOR:
         	extract_payload_data(pkt->header->payload_size, pkt->payload,dbg_ups_raw,sizeof(dbg_ups_raw));
         	dbg_ups_len = pkt->header->payload_size;
+
+        	grid_power = dbg_ups_raw[0];
+        	upsstationActive = dbg_ups_raw[1];
+        	battery_Backup = ((float)dbg_ups_raw[2])/10.0f;        //(0-120)/10vdc
+        	AC_Voltage = dbg_ups_raw[3];				//(0-220)Vac
+        	AC_Current = dbg_ups_raw[4];
+        	raw_CurrentDC = ((uint16_t)dbg_ups_raw[5] << 8) | dbg_ups_raw[6];        //(0-5000)/100 A
+        	chargCurrentDC = ((float)raw_CurrentDC)/100.0f;
+
+
+        	raw_VoltageDC = ((uint16_t)dbg_ups_raw[7] << 8) | dbg_ups_raw[8];
+
+        	chargVoltageDC = ((float)raw_VoltageDC)/100.0f;        //(0-20000)/100 V
+
         	break;
         default:
             break;

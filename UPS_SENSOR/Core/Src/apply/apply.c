@@ -31,8 +31,8 @@ extern volatile uint8_t slave_need_relisten;
 
 static uint8_t sensor_init(void)
 {
-    if (!AC_app_init())      return 0U;
-    if (!dc_app_init())      return 0U;
+//    if (!AC_app_init())      return 0U;
+    if (!DC_app_init())      return 0U;
     if (!NTS250_APP_init())  return 0U;
     return 1U;
 }

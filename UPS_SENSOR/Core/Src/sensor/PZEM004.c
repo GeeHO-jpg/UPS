@@ -59,7 +59,7 @@ static uint8_t _addr = 0;
 static uint8_t rx_buf[RES_AC];
 static uint8_t tx_buf[REQ_AC];
 
-static PZEM_State_t pzem_state = PZEM_STATE_IDLE;
+static PZEM_State_t pzem_state = PZEM004_STATE_IDLE;
 static uint32_t pzem_state_tick = 0U;
 static uint32_t pzem_last_read_tick = 0U;
 
@@ -334,7 +334,7 @@ void PZEM004_Task(void)
 {
     switch (pzem_state)
     {
-        case PZEM_STATE_IDLE:
+        case PZEM004_STATE_IDLE:
             {
                 if ((HAL_GetTick() - pzem_last_read_tick) < UPDATE_TIME)
                 {
@@ -347,78 +347,78 @@ void PZEM004_Task(void)
                 }
 
                 UART_Comm_ClearFlags(ac_id);
-                pzem_state = PZEM_STATE_SEND_REQ;
+                pzem_state = PZEM004_STATE_SEND_REQ;
                 break;
             }
             
 
-        case PZEM_STATE_SEND_REQ:
+        case PZEM004_STATE_SEND_REQ:
         {
             sendCmd8(CMD_RIR, 0x0000U, 0x000AU);
             pzem_state_tick = HAL_GetTick();
-            pzem_state = PZEM_STATE_WAIT_TX_DONE;
+            pzem_state = PZEM004_STATE_WAIT_TX_DONE;
             break;
         }
 
             
 
-        case PZEM_STATE_WAIT_TX_DONE:
+        case PZEM004_STATE_WAIT_TX_DONE:
         {
             if (UART_Comm_HasError(ac_id) != 0U)
             {
-                pzem_state = PZEM_STATE_ERROR;
+                pzem_state = PZEM004_STATE_ERROR;
                 break;
             }
 
             if ((HAL_GetTick() - pzem_state_tick) > READ_TIMEOUT)
             {
-                pzem_state = PZEM_STATE_ERROR;
+                pzem_state = PZEM004_STATE_ERROR;
                 break;
             }
 
             if (UART_Comm_IsTxDone(ac_id) != 0U)
             {
                 UART_Comm_ClearFlags(ac_id);
-                pzem_state = PZEM_STATE_START_RX;
+                pzem_state = PZEM004_STATE_START_RX;
             }
             break;
         }
 
-        case PZEM_STATE_START_RX:
+        case PZEM004_STATE_START_RX:
         {
             if (UART_Comm_Receive_IT(ac_id, rx_buf, RES_AC) == 0U)
             {
-                pzem_state = PZEM_STATE_ERROR;
+                pzem_state = PZEM004_STATE_ERROR;
                 break;
             }
 
             pzem_state_tick = HAL_GetTick();
-            pzem_state = PZEM_STATE_WAIT_RX_DONE;
+            pzem_state = PZEM004_STATE_WAIT_RX_DONE;
             break;
         }
 
-        case PZEM_STATE_WAIT_RX_DONE:
+        case PZEM004_STATE_WAIT_RX_DONE:
         {
             if (UART_Comm_HasError(ac_id) != 0U)
             {
-                pzem_state = PZEM_STATE_ERROR;
+                pzem_state = PZEM004_STATE_ERROR;
                 break;
             }
 
             if ((HAL_GetTick() - pzem_state_tick) > READ_TIMEOUT)
             {
-                pzem_state = PZEM_STATE_ERROR;
+                pzem_state = PZEM004_STATE_ERROR;
                 break;
             }
 
             if (UART_Comm_IsRxDone(ac_id) != 0U)
             {
-                pzem_state = PZEM_STATE_PARSE;
+                pzem_state = PZEM004_STATE_PARSE;
             }
             break;
         }
 
-        case PZEM_STATE_PARSE:
+        case PZEM004_STATE_PARSE:
         {
             uint16_t low_word;
             uint16_t high_word;
@@ -428,25 +428,25 @@ void PZEM004_Task(void)
 
             if (rx_buf[0] != _addr)
             {
-                pzem_state = PZEM_STATE_ERROR;
+                pzem_state = PZEM004_STATE_ERROR;
                 break;
             }
 
             if (rx_buf[1] != CMD_RIR)
             {
-                pzem_state = PZEM_STATE_ERROR;
+                pzem_state = PZEM004_STATE_ERROR;
                 break;
             }
 
             if (rx_buf[2] != 20U)
             {
-                pzem_state = PZEM_STATE_ERROR;
+                pzem_state = PZEM004_STATE_ERROR;
                 break;
             }
 
             if (checkCRC(rx_buf, RES_AC) == false)
             {
-                pzem_state = PZEM_STATE_ERROR;
+                pzem_state = PZEM004_STATE_ERROR;
                 break;
             }
 
@@ -475,20 +475,20 @@ void PZEM004_Task(void)
             latest_valid = 1U;
             new_data_ready = 1U;
             pzem_last_read_tick = HAL_GetTick();
-            pzem_state = PZEM_STATE_IDLE;
+            pzem_state = PZEM004_STATE_IDLE;
             break;
         }
 
-        case PZEM_STATE_ERROR:
+        case PZEM004_STATE_ERROR:
         {
             UART_Comm_Abort(ac_id);
             UART_Comm_ClearFlags(ac_id);
-            pzem_state = PZEM_STATE_IDLE;
+            pzem_state = PZEM004_STATE_IDLE;
             break;
         }
 
         default:
-            pzem_state = PZEM_STATE_IDLE;
+            pzem_state = PZEM004_STATE_IDLE;
             break;
     }
 }

@@ -13,11 +13,11 @@ InverterQData_t inv;
 
 uint8_t NTS250_APP_init(void)
 {
-    if(!UART_ID_Register(UART_COMM_2, &huart2))
-    {
-    	return 0U;
-    }
-    NTS250_init(UART_COMM_2);
+//    if(!UART_ID_Register(UART_COMM_2, &huart2))
+//    {
+//    	return 0U;
+//    }
+    NTS250_init(UART_COMM_2,&huart2);
     return 1U;
 }
 

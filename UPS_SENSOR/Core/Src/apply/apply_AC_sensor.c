@@ -15,13 +15,13 @@
 #include "../comm/adc_comm.h"
 
 
-extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart2;
 
 
-PZEMValues value;
+PZEMValues ACvalue;
 uint8_t AC_app_init(void)
 {
-	return PZEM004_init(&huart1, UART_COMM_1, 0x01);
+	return PZEM004_init(&huart2, UART_COMM_2, 0x01);
 }
 
 uint8_t AC_app_Run(PZEMValues *out)
@@ -33,10 +33,10 @@ uint8_t AC_app_Run(PZEMValues *out)
 
     PZEM004_Task();
 
-    if (PZEM004_GetLatest(&value))
+    if (PZEM004_GetLatest(&ACvalue))
     {
         /* เอาค่า value ไปใช้ */
-        *out = value;
+        *out = ACvalue;
         return 1U;
     }
     else

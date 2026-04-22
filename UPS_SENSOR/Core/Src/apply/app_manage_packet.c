@@ -21,7 +21,7 @@
 ups_data_t UPSPacket;
 
 /*sensor variable*/
-DC_SensorRawValue_t DC_out;
+PZEM003Values_t DC_out;
 InverterQData_t inv_out;
 PZEMValues AC_DATA;
 
@@ -162,11 +162,15 @@ static void app_pack_data_to_struct(void)
         // ได้ข้อมูล AC ใหม่
     	UPSPacket.AC_Voltage = (uint8_t)(AC_DATA.voltage_x10 / 10U);
     }
-    if (dc_app_run(&DC_out) != 0U)
+    if (DC_app_Run(&DC_out) != 0U)
     {
         // ได้ข้อมูล DC ใหม่
         UPSPacket.chargCurrentDC =  DC_out.current_x100;
         UPSPacket.chargVoltageDC =  DC_out.voltage_x100;
+    }else
+    {
+        UPSPacket.chargCurrentDC =  0;
+        UPSPacket.chargVoltageDC =  0;
     }
 
     if (NTS250_APP_run(&inv_out) != 0U)
