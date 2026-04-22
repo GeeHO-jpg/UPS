@@ -322,7 +322,7 @@ void Master_app_run(void)
 {
     uint32_t now = HAL_GetTick();
     static uint32_t last = 0U;
-    static uint32_t pending_tick = 0U;
+//    static uint32_t pending_tick = 0U;
     static uint16_t last_error_count = 0U;
     static uint8_t request_pending = 0U;
     UDPPacket *pkt;
@@ -377,7 +377,7 @@ void Master_app_run(void)
             if (i2ccom_run() != 0U)
             {
                 request_pending = 1U;
-                pending_tick = now;
+//                pending_tick = now;
             }
         }
 
