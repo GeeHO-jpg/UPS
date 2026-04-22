@@ -8,7 +8,8 @@
 #ifndef SRC_APPLY_APPLY_INVERTER_H_
 #define SRC_APPLY_APPLY_INVERTER_H_
 
-#include "../sensor/NTS250_INVERTER.h"
+#include "../sensor/NTS250P_INVERTER.h"
+#include <stdint.h>
 
 uint8_t NTS250_APP_init();
 uint8_t NTS250_APP_run(InverterQData_t *out);

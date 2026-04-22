@@ -4,7 +4,8 @@
 #include "apply_INVERTER.h"
 #include "../comm/uart_comm.h"
 #include <string.h>
-#include "../sensor/NTS250_INVERTER.h"
+#include <stdint.h>
+#include "../sensor/NTS250P_INVERTER.h"
 #include "main.h"
 
 extern UART_HandleTypeDef huart2;
@@ -13,12 +14,8 @@ InverterQData_t inv;
 
 uint8_t NTS250_APP_init(void)
 {
-//    if(!UART_ID_Register(UART_COMM_2, &huart2))
-//    {
-//    	return 0U;
-//    }
-    NTS250_init(UART_COMM_2,&huart2);
-    return 1U;
+	 NTS250_init(UART_COMM_2,&huart2);
+     return 1U;
 }
 
 uint8_t NTS250_APP_run(InverterQData_t *out)
@@ -28,6 +25,7 @@ uint8_t NTS250_APP_run(InverterQData_t *out)
     {
         return 0U;
     }
+
 
     NTS250_Task();
 

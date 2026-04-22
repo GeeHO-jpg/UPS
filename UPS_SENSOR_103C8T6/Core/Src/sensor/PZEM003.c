@@ -30,7 +30,7 @@
 #define CMD_CAL         0x41
 #define CMD_REST        0x42
 
-#define UPDATE_TIME     200
+#define UPDATE_TIME     1000
 
 #define RESPONSE_SIZE 32
 #define READ_TIMEOUT 100
@@ -47,8 +47,8 @@ static Uart_Comm_id_t dc_id = UART_COMM_MAX;
 static uint8_t _addr = 0;
 
 //static uint32_t _lastRead;
-static uint8_t rx_buf[RES_DC];
-static uint8_t tx_buf[REQ_DC];
+static uint8_t PZEM003_rx_buf[RES_DC];
+static uint8_t PZEM003_tx_buf[REQ_DC];
 
 static PZEM003_State_t pzem_state = PZEM003_STATE_IDLE;
 static uint32_t pzem003_state_tick = 0U;
@@ -131,18 +131,18 @@ static void sendCmd8(uint8_t cmd, uint16_t rAddr, uint16_t val)
 
 
 
-    tx_buf[0] = _addr;              // Set slave address
-    tx_buf[1] = cmd;                     // Set command
+	PZEM003_tx_buf[0] = _addr;              // Set slave address
+	PZEM003_tx_buf[1] = cmd;                     // Set command
 
-    tx_buf[2] = (rAddr >> 8) & 0xFF;     // Set high byte of register address
-    tx_buf[3] = (rAddr) & 0xFF;          // Set low byte =//=
+	PZEM003_tx_buf[2] = (rAddr >> 8) & 0xFF;     // Set high byte of register address
+	PZEM003_tx_buf[3] = (rAddr) & 0xFF;          // Set low byte =//=
 
-    tx_buf[4] = (val >> 8) & 0xFF;       // Set high byte of register value
-    tx_buf[5] = (val) & 0xFF;            // Set low byte =//=
+	PZEM003_tx_buf[4] = (val >> 8) & 0xFF;       // Set high byte of register value
+	PZEM003_tx_buf[5] = (val) & 0xFF;            // Set low byte =//=
 
-    setCRC(tx_buf, REQ_DC);                   // Set CRC of frame
+    setCRC(PZEM003_tx_buf, REQ_DC);                   // Set CRC of frame
 
-    UART_Comm_Transmit_IT(dc_id, tx_buf, REQ_DC);
+    UART_Comm_Transmit_IT(dc_id, PZEM003_tx_buf, REQ_DC);
 
 }
 
@@ -239,7 +239,7 @@ void PZEM003_Task(void)
 
         case PZEM003_STATE_START_RX:
         {
-            if (UART_Comm_Receive_IT(dc_id, rx_buf, RES_DC) == 0U)
+            if (UART_Comm_Receive_IT(dc_id, PZEM003_rx_buf, RES_DC) == 0U)
             {
                 pzem_state = PZEM003_STATE_ERROR;
                 break;
@@ -279,31 +279,31 @@ void PZEM003_Task(void)
             // uint32_t raw_power_x10;
             // uint32_t raw_energy_wh;
 
-            if (rx_buf[0] != _addr)
+            if (PZEM003_rx_buf[0] != _addr)
             {
                 pzem_state = PZEM003_STATE_ERROR;
                 break;
             }
 
-            if (rx_buf[1] != CMD_RIR)
+            if (PZEM003_rx_buf[1] != CMD_RIR)
             {
                 pzem_state = PZEM003_STATE_ERROR;
                 break;
             }
 
-            if (rx_buf[2] != 16U)
+            if (PZEM003_rx_buf[2] != 16U)
             {
                 pzem_state = PZEM003_STATE_ERROR;
                 break;
             }
 
-            if (checkCRC(rx_buf, RES_DC) == false)
+            if (checkCRC(PZEM003_rx_buf, RES_DC) == false)
             {
                 pzem_state = PZEM003_STATE_ERROR;
                 break;
             }
 
-            latest_value.voltage_x100 = ((uint16_t)rx_buf[3] << 8) | rx_buf[4];
+            latest_value.voltage_x100 = ((uint16_t)PZEM003_rx_buf[3] << 8) | PZEM003_rx_buf[4];
 
             // low_word  = ((uint16_t)rx_buf[5] << 8) | rx_buf[6];
             // high_word = ((uint16_t)rx_buf[7] << 8) | rx_buf[8];
@@ -317,14 +317,14 @@ void PZEM003_Task(void)
             // high_word = ((uint16_t)rx_buf[15] << 8) | rx_buf[16];
             // raw_energy_wh = ((uint32_t)high_word << 16) | low_word;
 
-            latest_value.current_x100 = ((uint16_t)rx_buf[5] << 8) | rx_buf[6];
-            latest_value.power_x10 =  (((uint32_t)rx_buf[9]  << 8) | rx_buf[10]) << 16 | (((uint32_t)rx_buf[7]  << 8) | rx_buf[8]);
-            latest_value.energy_wh = (((uint32_t)rx_buf[13] << 8) | rx_buf[14]) << 16 | (((uint32_t)rx_buf[11] << 8) | rx_buf[12]);
+            latest_value.current_x100 = ((uint16_t)PZEM003_rx_buf[5] << 8) | PZEM003_rx_buf[6];
+            latest_value.power_x10 =  (((uint32_t)PZEM003_rx_buf[9]  << 8) | PZEM003_rx_buf[10]) << 16 | (((uint32_t)PZEM003_rx_buf[7]  << 8) | PZEM003_rx_buf[8]);
+            latest_value.energy_wh = (((uint32_t)PZEM003_rx_buf[13] << 8) | PZEM003_rx_buf[14]) << 16 | (((uint32_t)PZEM003_rx_buf[11] << 8) | PZEM003_rx_buf[12]);
 
             
             
-            latest_value.high_alarm_status = ((uint16_t)rx_buf[15] << 8) | rx_buf[16];
-            latest_value.low_alarm_status  = ((uint16_t)rx_buf[17] << 8) | rx_buf[18];
+            latest_value.high_alarm_status = ((uint16_t)PZEM003_rx_buf[15] << 8) | PZEM003_rx_buf[16];
+            latest_value.low_alarm_status  = ((uint16_t)PZEM003_rx_buf[17] << 8) | PZEM003_rx_buf[18];
 
             latest_valid = 1U;
             new_data_ready = 1U;

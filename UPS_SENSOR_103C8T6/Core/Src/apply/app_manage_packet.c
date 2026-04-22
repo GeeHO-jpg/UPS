@@ -157,11 +157,16 @@ static void make_plus_one_payload(const uint8_t *src, uint8_t *dst, uint16_t len
 
 static void app_pack_data_to_struct(void)
 {
-    if(AC_app_Run(&AC_DATA) != 0U)
-    {
-        // ได้ข้อมูล AC ใหม่
-    	UPSPacket.AC_Voltage = (uint8_t)(AC_DATA.voltage_x10 / 10U);
-    }
+	if (AC_app_Run(&AC_DATA) != 0U)
+	{
+	    UPSPacket.AC_Voltage = (uint8_t)(AC_DATA.voltage_x10 / 10U);
+	}
+	else
+	{
+	    UPSPacket.AC_Voltage = 0U;
+	    UPSPacket.AC_Current = 0U;
+	}
+
     if (DC_app_Run(&DC_out) != 0U)
     {
         // ได้ข้อมูล DC ใหม่
@@ -177,12 +182,38 @@ static void app_pack_data_to_struct(void)
     {
         // ได้ข้อมูล inverter ใหม่
     	UPSPacket.battery_Backup = (uint8_t)inv_out.battery_voltage_x10;
-        
+
     }else{
     	UPSPacket.battery_Backup = 0;
     }
 
 }
+//static void app_pack_data_to_struct(void)
+//{
+//    NTS250_APP_run(&inv_out);
+//
+//    if (NTS250_IsBusy() == 0U)
+//    {
+//        if (AC_app_Run(&AC_DATA) != 0U)
+//        {
+//            UPSPacket.AC_Voltage = (uint8_t)(AC_DATA.voltage_x10 / 10U);
+//        }
+//    }
+//
+//    if ((NTS250_IsBusy() == 0U) && (PZEM004_IsBusy() == 0U))
+//    {
+//        if (DC_app_Run(&DC_out) != 0U)
+//        {
+//            UPSPacket.chargCurrentDC = DC_out.current_x100;
+//            UPSPacket.chargVoltageDC = DC_out.voltage_x100;
+//        }
+//    }
+//
+//    if (NTS250_GetLatest(&inv_out) != 0U)
+//    {
+//        UPSPacket.battery_Backup = (uint8_t)(inv_out.battery_voltage_x10 / 10U);
+//    }
+//}
 
 static uint8_t App_HandlePacket(const UDPPacket *pkt)
 {

@@ -11,7 +11,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-
+#include <string.h>
 #include "../comm/comm.h"
 #include "main.h"
 
@@ -37,7 +37,7 @@
 #define WREG_ALARM_THR   0x0001
 #define WREG_ADDR        0x0002
 
-#define UPDATE_TIME     200
+#define UPDATE_TIME     1000
 
 #define RESPONSE_SIZE 32
 #define READ_TIMEOUT 100
@@ -479,10 +479,22 @@ void PZEM004_Task(void)
             break;
         }
 
+//        case PZEM004_STATE_ERROR:
+//        {
+//            UART_Comm_Abort(ac_id);
+//            UART_Comm_ClearFlags(ac_id);
+//            pzem_state = PZEM004_STATE_IDLE;
+//            break;
+//        }
         case PZEM004_STATE_ERROR:
         {
             UART_Comm_Abort(ac_id);
             UART_Comm_ClearFlags(ac_id);
+
+            memset(&latest_value, 0, sizeof(latest_value));
+            latest_valid = 0U;
+            new_data_ready = 0U;
+
             pzem_state = PZEM004_STATE_IDLE;
             break;
         }

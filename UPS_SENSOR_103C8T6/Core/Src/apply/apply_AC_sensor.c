@@ -32,6 +32,7 @@ uint8_t AC_app_Run(PZEMValues *out)
     }
 
     PZEM004_Task();
+    memset(&ACvalue, 0, sizeof(ACvalue));
 
     if (PZEM004_GetLatest(&ACvalue))
     {

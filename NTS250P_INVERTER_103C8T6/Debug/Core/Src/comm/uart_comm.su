@@ -1,0 +1,15 @@
+../Core/Src/comm/uart_comm.c:23:16:UART_FindIndex	24	static
+../Core/Src/comm/uart_comm.c:43:9:UART_ID_Register	16	static
+../Core/Src/comm/uart_comm.c:59:9:UART_Comm_Transmit_IT	16	static
+../Core/Src/comm/uart_comm.c:85:9:UART_Comm_Receive_IT	16	static
+../Core/Src/comm/uart_comm.c:111:9:UART_Comm_Abort	16	static
+../Core/Src/comm/uart_comm.c:128:9:UART_Comm_IsTxDone	16	static
+../Core/Src/comm/uart_comm.c:138:9:UART_Comm_IsRxDone	16	static
+../Core/Src/comm/uart_comm.c:148:9:UART_Comm_IsBusy	16	static
+../Core/Src/comm/uart_comm.c:158:9:UART_Comm_HasError	16	static
+../Core/Src/comm/uart_comm.c:168:6:UART_Comm_ClearFlags	16	static
+../Core/Src/comm/uart_comm.c:180:6:HAL_UART_TxCpltCallback	24	static
+../Core/Src/comm/uart_comm.c:193:6:HAL_UART_RxCpltCallback	24	static
+../Core/Src/comm/uart_comm.c:206:6:HAL_UART_ErrorCallback	24	static
+../Core/Src/comm/uart_comm.c:220:9:UART_TransmitBlocking	24	static
+../Core/Src/comm/uart_comm.c:235:9:UART_ReceiveBlocking	24	static
